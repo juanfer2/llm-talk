@@ -1,23 +1,41 @@
 import { Chroma } from '@langchain/community/vectorstores/chroma';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ChromaClient {
+  private readonly logger = new Logger(ChromaClient.name);
   vectorClient: Chroma;
-  private embeddings: OpenAIEmbeddings;
+  private readonly embeddings: OpenAIEmbeddings;
 
-  constructor(collectionName: string, url: string) {
+  constructor(
+    collectionName: string,
+    url: string,
+    private readonly configService: ConfigService,
+  ) {
     try {
-      this.embeddings = new OpenAIEmbeddings();
-      this.vectorClient = new Chroma(this.embeddings, {
-        collectionName: collectionName ?? 'wompi-docs',
-        url: url ?? 'http://localhost:8000', // URL del servidor Chroma
+      // Use OpenAI embeddings
+      const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+      if (!apiKey) {
+        throw new Error('OPENAI_API_KEY is required for embeddings');
+      }
+
+      this.embeddings = new OpenAIEmbeddings({
+        openAIApiKey: apiKey,
       });
 
-      Logger.log('Chroma inicializado exitosamente');
+      this.vectorClient = new Chroma(this.embeddings, {
+        collectionName: collectionName ?? 'wompi-docs',
+        url: url ?? 'http://localhost:8000',
+      });
+
+      this.logger.log('Chroma inicializado exitosamente con OpenAI embeddings');
     } catch (error) {
-      Logger.error('Error inicializando Chroma:', error);
+      this.logger.error(
+        `Error inicializando Chroma en ${ChromaClient.name}:`,
+        error,
+      );
       throw error;
     }
   }

@@ -96,3 +96,47 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+
+Single Document Save Request
+```bash
+  curl -X POST http://localhost:3000/documents/upload \
+    -H "Content-Type: application/json" \
+    -d '{
+      "content": "This is the document content that will be saved and vectorized",
+      "metadata": {
+        "source": "user_upload",
+        "type": "text",
+        "title": "Sample Document",
+        "author": "John Doe",
+        "category": "general"
+      }
+    }'
+```
+
+Batch Document Save Request
+
+```bash
+  curl -X POST http://localhost:3000/documents/upload/batch \
+    -H "Content-Type: application/json" \
+    -d '{
+      "documents": [
+        {
+          "content": "First document content",
+          "metadata": {
+            "source": "batch_upload",
+            "type": "pdf",
+            "filename": "document1.pdf"
+          }
+        },
+        {
+          "content": "Second document content",
+          "metadata": {
+            "source": "batch_upload",
+            "type": "text",
+            "filename": "document2.txt"
+          }
+        }
+      ]
+    }'
+```

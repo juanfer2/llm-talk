@@ -1,36 +1,30 @@
-import { Document } from '@langchain/core/documents';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ChatUseCase } from '../../../domain/use-cases/chat.use-case';
 import { UploadDocumentUseCase } from '../../../domain/use-cases/upload-document.use-case';
+import { ChatController } from '../../controllers/chat.controller';
 import { DocumentController } from '../../controllers/document.controller';
+import { ClaudeClient } from '../llm/claude.client';
 import { ChromaClient } from './client';
 import { DocumentCromaRepository } from './repositories/document-chroma.repository';
 
 @Module({
   imports: [ConfigModule],
-  controllers: [DocumentController],
+  controllers: [DocumentController, ChatController],
   providers: [
     {
       provide: ChromaClient,
       useFactory: (configService: ConfigService) => {
-        const url = configService.get<string>('CHROMADB_URL');
+        const url = configService.get<string>('CHROMA_DB_URL');
 
-        return new ChromaClient('wompi', url as string);
+        return new ChromaClient('wompi', url as string, configService);
       },
       inject: [ConfigService],
     },
     {
       provide: DocumentCromaRepository,
       useFactory: (chromaClient: ChromaClient) => {
-        const c = new DocumentCromaRepository(chromaClient);
-        const d = new Document({
-          pageContent: 'Wompi cobra 3.4% + $900 por tarjetas de crédito',
-          metadata: { topic: 'comisiones' },
-        });
-
-        void c.addDocuments([d]);
-        return c;
-        //return new DocumentCromaRepository(chromaClient);
+        return new DocumentCromaRepository(chromaClient);
       },
       inject: [ChromaClient],
     },
@@ -38,8 +32,25 @@ import { DocumentCromaRepository } from './repositories/document-chroma.reposito
       provide: 'DocumentRepository',
       useExisting: DocumentCromaRepository,
     },
+    {
+      provide: ClaudeClient,
+      useFactory: (configService: ConfigService) => {
+        return new ClaudeClient(configService);
+      },
+      inject: [ConfigService],
+    },
+    {
+      provide: 'LLMClient',
+      useExisting: ClaudeClient,
+    },
     UploadDocumentUseCase,
+    ChatUseCase,
   ],
-  exports: [DocumentCromaRepository, UploadDocumentUseCase],
+  exports: [
+    DocumentCromaRepository,
+    UploadDocumentUseCase,
+    ClaudeClient,
+    ChatUseCase,
+  ],
 })
 export class ChromaModule {}
