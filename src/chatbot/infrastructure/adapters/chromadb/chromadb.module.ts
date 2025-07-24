@@ -17,7 +17,7 @@ import { DocumentCromaRepository } from './repositories/document-chroma.reposito
       useFactory: (configService: ConfigService) => {
         const url = configService.get<string>('CHROMA_DB_URL');
 
-        return new ChromaClient('wompi', url as string, configService);
+        return new ChromaClient('wompi-docs', url as string, configService);
       },
       inject: [ConfigService],
     },

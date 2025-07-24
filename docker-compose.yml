@@ -9,6 +9,9 @@ services:
       - chromadb_data:/chroma/chroma
     environment:
       - CHROMA_SERVER_CORS_ALLOW_ORIGINS=*
+      - CHROMA_DB_IMPL=duckdb+parquet
+      - CHROMA_PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=False
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8000/api/v1/heartbeat']
       interval: 30s

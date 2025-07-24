@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Inject,
   Post,
+  Query,
   UploadedFile,
   UseInterceptors,
   UsePipes,
@@ -13,17 +16,23 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsInt,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateNested,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import * as pdfParse from 'pdf-parse';
 import {
   UploadDocumentRequest,
   UploadDocumentUseCase,
 } from '../../domain/use-cases/upload-document.use-case';
+import { DocumentRepository, PaginatedResponse } from '../../domain/repositories';
+import { Document } from 'langchain/document';
 
 interface UploadedFile {
   fieldname: string;
@@ -74,10 +83,29 @@ export class UploadPdfDto {
   title?: string;
 }
 
+export class GetDocumentsDto {
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsInt()
+  @Min(1)
+  page?: number = 1;
+
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number = 10;
+}
+
 @Controller('documents')
 @UsePipes(new ValidationPipe({ transform: true }))
 export class DocumentController {
-  constructor(private readonly uploadDocumentUseCase: UploadDocumentUseCase) {}
+  constructor(
+    private readonly uploadDocumentUseCase: UploadDocumentUseCase,
+    @Inject('DocumentRepository')
+    private readonly documentRepository: DocumentRepository,
+  ) {}
 
   @Post('upload')
   @HttpCode(HttpStatus.CREATED)
@@ -164,6 +192,30 @@ export class DocumentController {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Failed to process PDF: ${errorMessage}`);
+    }
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  async getAllDocuments(@Query() getDocumentsDto: GetDocumentsDto) {
+    try {
+      const { page = 1, limit = 10 } = getDocumentsDto;
+
+      const result: PaginatedResponse<Document> = await this.documentRepository.getAllDocuments({
+        page,
+        limit,
+      });
+
+      return {
+        message: 'Documents retrieved successfully',
+        status: 'success',
+        data: result.data,
+        pagination: result.pagination,
+      };
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to retrieve documents: ${errorMessage}`);
     }
   }
 }
