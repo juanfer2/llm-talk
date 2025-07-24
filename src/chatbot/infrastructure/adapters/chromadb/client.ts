@@ -27,8 +27,14 @@ export class ChromaClient {
 
       this.vectorClient = new Chroma(this.embeddings, {
         collectionName: collectionName ?? 'wompi-docs',
-        url: url ?? 'http://localhost:8000',
+        url: url ?? 'http://localhost:8001',
+        collectionMetadata: {
+          'hnsw:space': 'cosine',
+        },
       });
+
+      // Initialize the collection to ensure it exists
+      this.initializeCollection();
 
       this.logger.log('Chroma inicializado exitosamente con OpenAI embeddings');
     } catch (error) {
@@ -37,6 +43,17 @@ export class ChromaClient {
         error,
       );
       throw error;
+    }
+  }
+
+  private async initializeCollection(): Promise<void> {
+    try {
+      // This will create the collection if it doesn't exist
+      await this.vectorClient.ensureCollection();
+      this.logger.log('ChromaDB collection initialized successfully');
+    } catch (error) {
+      this.logger.warn('Could not initialize ChromaDB collection:', error);
+      // Don't throw here as the collection might be created later when documents are added
     }
   }
 }

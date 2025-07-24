@@ -17,7 +17,10 @@ export class ClaudeClient {
       });
       this.logger.log('Claude client inicializado exitosamente');
     } catch (error) {
-      this.logger.error(`Error inicializando Claude en ${ClaudeClient.name}:`, error);
+      this.logger.error(
+        `Error inicializando Claude en ${ClaudeClient.name}:`,
+        error,
+      );
       throw error;
     }
   }
@@ -31,7 +34,10 @@ export class ClaudeClient {
       const response = await this.client.invoke(prompt);
       return response.content as string;
     } catch (error) {
-      this.logger.error(`Error invocando Claude en ${ClaudeClient.name}:`, error);
+      this.logger.error(
+        `Error invocando Claude en ${ClaudeClient.name}:`,
+        error,
+      );
       throw error;
     }
   }
