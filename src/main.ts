@@ -8,12 +8,15 @@ async function bootstrap() {
   const client = new ChromaClient({
     ssl: false,
     host: 'localhost',
-    port: 8001,
+    port: 8000,
     database: 'wompi-docs',
     headers: {},
   });
 
-  await client.heartbeat();
+  const r = await client.heartbeat();
+  console.log(r);
+
+  console.log();
 
   const collectionsSubset = await client.listCollections({
     limit: 20,
